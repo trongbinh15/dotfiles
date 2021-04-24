@@ -34,12 +34,12 @@ return require('packer').startup(function()
   
     -- Vim dispatch
     use { 'tpope/vim-dispatch' }
-
-    -- CoC
-    use { 'neoclide/coc.nvim', branch = 'release' }
+   
+    -- Explore
+    use { 'kyazdani42/nvim-tree.lua' }
 
     -- Icon
-    use { 'ryanoasis/vim-devicons' }
+    use { 'kyazdani42/nvim-web-devicons' }
 
     -- vim sneak, movement
     use { 'justinmk/vim-sneak' }
@@ -63,7 +63,7 @@ return require('packer').startup(function()
           -- your statusline
           config = function() require'galaxyline.spaceline' end,
           -- some optional icons
-          requires = {'ryanoasis/vim-devicons', opt = true}
+          requires = {'kyazdani42/nvim-web-devicons', opt = true}
       }
   
   end)
