@@ -46,15 +46,15 @@ return require('packer').startup(function()
     use { 'tpope/vim-repeat' }
     use { 'tpope/vim-surround' }
 
-    -- close tag
-    use { 'alvan/vim-closetag' }
+    -- auto pair 
+    use { 'alvan/vim-closetag' } -- html tag
+    use { 'jiangmiao/auto-pairs' } -- code tag
 
     -- Vim <3 Tmux
     use { 'christoomey/vim-tmux-navigator' }
 
     -- Formater
     use { 'mhartington/formatter.nvim' }
-    -- use { 'prettier/vim-prettier', run = 'yarn install' }
   
     -- Line for Git
     use {

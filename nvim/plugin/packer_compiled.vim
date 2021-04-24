@@ -71,6 +71,10 @@ end
 time("try_loadstring definition", false)
 time("Defining packer_plugins", true)
 _G.packer_plugins = {
+  ["auto-pairs"] = {
+    loaded = true,
+    path = "/home/trongbinh/.local/share/nvim/site/pack/packer/start/auto-pairs"
+  },
   ["formatter.nvim"] = {
     loaded = true,
     path = "/home/trongbinh/.local/share/nvim/site/pack/packer/start/formatter.nvim"
