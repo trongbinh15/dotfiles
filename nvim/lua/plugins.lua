@@ -55,15 +55,14 @@ return require('packer').startup(function()
 
     -- Formater
     use { 'mhartington/formatter.nvim' }
+
+    -- buffer line
+    use {'akinsho/nvim-bufferline.lua', requires = 'kyazdani42/nvim-web-devicons'}
   
     -- Line for Git
     use {
-        'glepnir/galaxyline.nvim',
-          branch = 'main',
-          -- your statusline
-          config = function() require'galaxyline.spaceline' end,
-          -- some optional icons
-          requires = {'kyazdani42/nvim-web-devicons', opt = true}
-      }
+      'hoob3rt/lualine.nvim',
+      requires = {'kyazdani42/nvim-web-devicons', opt = true}
+    }
   
   end)
