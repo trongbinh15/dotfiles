@@ -13,6 +13,7 @@ nnoremap <silent>bd :BufferLineSortByDirectory<CR>
 " nnoremap <silent><mymap> :lua require'bufferline'.sort_buffers_by(function (buf_a, buf_b) return buf_a.id < buf_b.id end)<CR>
 
 nnoremap <silent> gb :BufferLinePick<CR>
+nnoremap <silent> bo :BufOnly<CR>
 " nnoremap <C-1> :lua require"bufferline".go_to_buffer(1)<CR>
 " nnoremap <C-2> :lua require"bufferline".go_to_buffer(2)<CR>
 " nnoremap <C-3> :lua require"bufferline".go_to_buffer(3)<CR>
