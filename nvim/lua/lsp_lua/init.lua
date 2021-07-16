@@ -1,17 +1,13 @@
 local nvim_lsp = require('lspconfig')
 local lsp_status = require('lsp-status')
--- local completion = require('completion')
 -- Your custom attach function for nvim-lspconfig goes here.
 local on_attach = function(client, bufnr)
-
     lsp_status.on_attach(client, bufnr)
 
-    require'lspconfig'.tsserver.setup{}
-
     local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
-    -- local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
+    local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
 
-    -- buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
+    buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
 
     -- Mappings
     local opts = { noremap=true, silent=true }
@@ -46,40 +42,8 @@ lsp_status.config({
 
 nvim_lsp.tsserver.setup{
   on_attach = on_attach,
+  flags = {
+    debounce_text_changes = 150,
+  },
   capabilities = lsp_status.capabilities
 }
-
-
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities.textDocument.completion.completionItem.snippetSupport = true
-capabilities.textDocument.completion.completionItem.resolveSupport = {
-  properties = {
-    'documentation',
-    'detail',
-    'additionalTextEdits',
-  }
-}
-
-nvim_lsp.rust_analyzer.setup {
-  capabilities = capabilities,
-}
-
-
---Enable (broadcasting) snippet capability for completion
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities.textDocument.completion.completionItem.snippetSupport = true
-
-require'lspconfig'.cssls.setup {
-  capabilities = capabilities,
-}
-
-
---Enable (broadcasting) snippet capability for completion
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities.textDocument.completion.completionItem.snippetSupport = true
-
-require'lspconfig'.html.setup {
-  capabilities = capabilities,
-}
-
-vim.lsp.diagnostic.set_virtual_text()
