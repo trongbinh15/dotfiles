@@ -145,6 +145,23 @@ function pd() {
   fi
 }
 
+
+function pt() {
+  if [ -f yarn.lock ]; then
+    echo "🔧 Detected yarn.lock → running: yarn test"
+    yarn test
+  elif [ -f package-lock.json ]; then
+    echo "🔧 Detected package-lock.json → running: npm run test"
+    npm run test
+  elif [ -f pnpm-lock.yaml ]; then
+    echo "🔧 Detected pnpm-lock.yaml → running: pnpm run test"
+    pnpm run test
+  else
+    echo "⚠️ No lockfile found → defaulting to: pnpm run test"
+    pnpm run test
+  fi
+}
+
 function pi() {
   if [ -f yarn.lock ]; then
     echo "📦 Detected yarn.lock → running: yarn install"
@@ -203,6 +220,33 @@ eslint_pr() {
 
   echo "$changed_files" | xargs npx eslint 
 }
+
+biome_pr() {
+  local target_branch
+  target_branch=$(git config heiway.targetBranch)
+
+  if [ -z "$target_branch" ]; then
+    echo "⚠️  heiway.targetBranch not set in git config."
+    return 1
+  fi
+
+  echo "🔍 Running Biome check against changes from: $target_branch"
+
+  # Ensure target branch is fetched
+  git fetch origin "$target_branch" > /dev/null 2>&1
+
+  # Get list of changed JS/TS files (excluding deleted)
+  local changed_files
+  changed_files=$(git diff --diff-filter=d --name-only "origin/$target_branch...HEAD" -- '*.js' '*.jsx' '*.ts' '*.tsx')
+
+  if [ -z "$changed_files" ]; then
+    echo "✅ No JS/TS files changed."
+    return 0
+  fi
+
+  echo "$changed_files" | xargs npx biome check
+}
+
 
 
 
