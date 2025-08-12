@@ -3,13 +3,14 @@ local ls = require("luasnip")
 local s = ls.snippet
 local t = ls.text_node
 
--- Define your snippet once
-local ite = s("ite", {
-  t('import * as TE from "fp-ts/TaskEither";'),
-})
+local snippets = {
+  s("ie", t('import * as E from "fp-ts/Either";')),
+  s("ite", t('import * as TE from "fp-ts/TaskEither";')),
+  s("irte", t('import * as RTE from "fp-ts/ReaderTaskEither";')),
+  s("ip", t('import { pipe } from "fp-ts/function";')),
+  s("iopt", t('import * as O from "fp-ts/Option";')),
+  s("iti", t('import invariant from "tiny-invariant";')),
+}
 
--- Register snippet for all relevant filetypes
-ls.add_snippets("typescript", { ite })
-ls.add_snippets("typescriptreact", { ite })
-ls.add_snippets("javascript", { ite })
-ls.add_snippets("javascriptreact", { ite })
+ls.add_snippets("typescript", snippets)
+ls.add_snippets("typescriptreact", snippets)
