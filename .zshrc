@@ -221,6 +221,33 @@ eslint_pr() {
   echo "$changed_files" | xargs npx eslint 
 }
 
+generate_changelog() {
+  local target_branch
+  target_branch=$(git config heiway.targetBranch)
+
+  if [ -z "$target_branch" ]; then
+    echo "⚠️  heiway.targetBranch not set in git config."
+    return 1
+  fi
+
+  echo "📝 Generating changelog from diff against: $target_branch"
+
+  # Ensure branch is up to date
+  git fetch origin "$target_branch" > /dev/null 2>&1
+
+  # Capture the diff (you can add filters if you want)
+  local diff_content
+  diff_content=$(git diff "origin/$target_branch...HEAD")
+
+  if [ -z "$diff_content" ]; then
+    echo "✅ No changes found."
+    return 0
+  fi
+
+  # Send to Gemini CLI (replace with actual command/flags for Gemini)
+  echo "$diff_content" | gemini prompt "Generate a changelog based on this diff"
+}
+
 biome_pr() {
   local target_branch
   target_branch=$(git config heiway.targetBranch)
