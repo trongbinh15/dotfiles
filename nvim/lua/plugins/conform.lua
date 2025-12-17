@@ -2,7 +2,7 @@ return {
   "stevearc/conform.nvim",
   opts = {
     formatters_by_ft = {
-      javascript = { "smart_biome" },
+      -- javascript = { "smart_biome" },
       typescript = { "smart_biome" },
       javascriptreact = { "smart_biome" },
       typescriptreact = { "smart_biome" },

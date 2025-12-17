@@ -116,21 +116,337 @@ export REACT_EDITOR=nvim
 # For a full list of active aliases, run `alias`.
 #
 # Example aliases
-alias zshconfig="vi ~/.zshrc"
+alias zshconfig="nvim ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 # source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 
 alias ps="pnpm run start"
 alias pra="pnpm run android"
 alias pri="pnpm run ios"
-alias hsb="cd hydra-sb-frontend"
-alias hym="cd hydra-ym-frontend"
-alias htm="cd hydra-tm-frontend"
-alias hcp="cd hydra-components"
-alias he="cd hydra-epod-frontend"
+alias yta='yt-dlp -x --audio-format mp3 -o "./%(title)s.%(ext)s"'
+
+# Jira sprint workitems
+alias jsw='acli jira workitem search --jql "assignee = currentUser() AND sprint in openSprints() AND status != Done"'
+
+tor() {
+  local link="$(pbpaste)"
+  transmission-cli -w ~/Downloads "$link"
+}
+
+ji() {
+  local open_web=false
+  local input=""
+
+  # Parse options
+  while [[ "$1" != "" ]]; do
+    case "$1" in
+      -o|--open)
+        open_web=true
+        ;;
+      *)
+        input="$1"
+        ;;
+    esac
+    shift
+  done
+
+  # Auto-detect ticket from current branch if no input
+  if [[ -z "$input" ]]; then
+    local branch
+    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
+      echo "❌ Cannot get current branch and no ticket provided"
+      return 1
+    }
+
+    # Extract HYDRA-XXXX case-insensitive
+    input=$(echo "$branch" | grep -oi 'HYDRA-[0-9]\+')
+
+    if [[ -z "$input" ]]; then
+      echo "❌ No ticket ID found in branch name and no input provided"
+      return 1
+    fi
+
+    # Uppercase for ACLI
+    input=$(echo "$input" | tr '[:lower:]' '[:upper:]')
+  else
+    # Auto-prefix HYDRA- if only numeric
+    if [[ "$input" =~ ^[0-9]+$ ]]; then
+      input="HYDRA-$input"
+    fi
+  fi
+
+  # Run ACLI
+  if $open_web; then
+    acli jira workitem view "$input" --web
+  else
+    acli jira workitem view "$input" --fields '*all'
+  fi
+}
+
+
+jit() {
+  local branch ticket
+  branch=$(git rev-parse --abbrev-ref HEAD)
+  ticket=$(echo "$branch" | grep -oi 'HYDRA-[0-9]\+')
+  ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+
+  acli jira workitem view "$ticket" --fields key,summary \
+    | sed -n 's/^Key:[[:space:]]*//p; s/^Summary:[[:space:]]*//p' \
+    | paste -sd ':' -
+}
+
+
+jicl() {
+  local branch ticket
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
+    echo "❌ Cannot get current branch"
+    return 1
+  }
+
+  ticket=$(echo "$branch" | grep -oi 'HYDRA-[0-9]\+')
+  if [[ -z "$ticket" ]]; then
+    echo "❌ No ticket ID found in branch name"
+    return 1
+  fi
+
+  ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+
+  acli jira workitem comment list --key "$ticket"
+}
+
+jicd() {
+  local comment_id="$1"
+
+  if [[ -z "$comment_id" ]]; then
+    echo "Usage: jicdel <COMMENT-ID>"
+    return 1
+  fi
+
+  # Auto-detect ticket from current branch
+  local branch ticket
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
+    echo "❌ Cannot get current branch"
+    return 1
+  }
+
+  ticket=$(echo "$branch" | grep -oi 'HYDRA-[0-9]\+')
+  if [[ -z "$ticket" ]]; then
+    echo "❌ No ticket ID found in branch name"
+    return 1
+  fi
+
+  # Uppercase ticket for ACLI
+  ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+
+  # Delete the comment
+  acli jira workitem comment delete --key "$ticket" --id "$comment_id"
+
+  echo "✅ Deleted comment $comment_id from $ticket"
+}
+
+jis() {
+  local flag="$1"
+
+  if [[ -z "$flag" ]]; then
+    echo "Usage: jistatus <flag>"
+    echo "Allowed flags: i (In Progress), r (Planned), t (Test), o (To Do)"
+    return 1
+  fi
+
+  # Map flags to actual status
+  local new_status=""
+  case "$flag" in
+    i) new_status="In Progress" ;;
+    r) new_status="Planned" ;;
+    t) new_status="Test" ;;
+    o) new_status="To Do" ;;
+    *)
+      echo "❌ Invalid flag: '$flag'"
+      echo "Allowed flags: i (In Progress), r (Planned), t (Test), o (To Do)"
+      return 1
+      ;;
+  esac
+
+  # Auto-detect ticket from current branch
+  local branch ticket
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
+    echo "❌ Cannot get current branch"
+    return 1
+  }
+
+  ticket=$(echo "$branch" | grep -oi 'HYDRA-[0-9]\+')
+  if [[ -z "$ticket" ]]; then
+    echo "❌ No ticket ID found in branch name"
+    return 1
+  fi
+
+  ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+
+  # Transition ticket
+  acli jira workitem transition --key "$ticket" --status "$new_status"
+  echo "✅ Changed status of $ticket to '$new_status'"
+}
+
+
+
+jic() {
+  local body="$1"
+
+  if [[ -z "$body" ]]; then
+    echo "Usage: jic <comment body>"
+    return 1
+  fi
+
+  # Auto-detect ticket from current branch
+  local branch ticket
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
+    echo "❌ Cannot get current branch"
+    return 1
+  }
+
+  ticket=$(echo "$branch" | grep -oi 'HYDRA-[0-9]\+')
+  if [[ -z "$ticket" ]]; then
+    echo "❌ No ticket ID found in branch name"
+    return 1
+  fi
+
+  # Uppercase ticket for ACLI
+  ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+
+  # Add comment via ACLI
+  acli jira workitem comment create --key "$ticket" -b "$body"
+
+  echo "✅ Comment added to $ticket"
+}
+
+mkb() {
+  local ticket=""
+  local do_checkout=false
+
+  # ---- if no arg → attempt to read from clipboard ----
+  if [[ $# -lt 1 ]]; then
+    if command -v pbpaste &>/dev/null; then
+      ticket="$(pbpaste)"
+    elif command -v xclip &>/dev/null; then
+      ticket="$(xclip -o -selection clipboard)"
+    elif command -v xsel &>/dev/null; then
+      ticket="$(xsel --clipboard --output)"
+    else
+      echo "❌ No input and cannot read clipboard"
+      echo "Usage: mkb <TICKET-ID or number> [-c]"
+      return 1
+    fi
+  fi
+
+  # ---- parse args ----
+  while [[ "$1" != "" ]]; do
+    case "$1" in
+      -c|--checkout)
+        do_checkout=true
+        ;;
+      *)
+        ticket="$1"
+        ;;
+    esac
+    shift
+  done
+
+  if [[ -z "$ticket" ]]; then
+    echo "❌ Ticket ID missing"
+    return 1
+  fi
+
+  # ---- Auto-prefix HYDRA if numeric ----
+  if [[ "$ticket" =~ ^[0-9]+$ ]]; then
+    ticket="HYDRA-$ticket"
+  else
+    ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+  fi
+
+  # ---- fetch ticket via ACLI ----
+  local acli_output
+  acli_output=$(acli jira workitem view "$ticket" --fields '*all' 2>/dev/null)
+  if [[ -z "$acli_output" ]]; then
+    echo "❌ Cannot fetch ticket $ticket"
+    return 1
+  fi
+
+  # ---- extract Type & Summary ----
+  local issue_type summary
+  issue_type=$(echo "$acli_output" | grep -i '^Type:' | sed 's/Type:[[:space:]]*//')
+  summary=$(echo "$acli_output" | grep -i '^Summary:' | sed 's/Summary:[[:space:]]*//')
+
+  # ---- determine branch prefix ----
+  local prefix="feat"
+  case "${issue_type:l}" in
+    "bug"|"defect"|"error"|"hotfix"|"story defect")
+      prefix="bugfix"
+      ;;
+    sub-task)
+      prefix="feat"
+      ;;
+  esac
+
+  # ---- normalize summary → kebab-case ----
+  summary=$(echo "$summary" | sed 's/\[[^]]*\]//g')
+
+  local kebab
+  kebab=$(echo "$summary" \
+      | iconv -f UTF-8 -t ASCII//TRANSLIT \
+      | tr '[:upper:]' '[:lower:]' \
+      | sed 's/[^a-z0-9]/-/g' \
+      | sed 's/-\+/-/g' \
+      | sed 's/^-//' \
+      | sed 's/-$//')
+
+  # ---- limit summary length ----
+  local MAX_LEN=40
+  if [[ ${#kebab} -gt $MAX_LEN ]]; then
+    local truncated=${kebab:0:$MAX_LEN}
+    kebab=${truncated%-*}
+  fi
+
+  # ---- final branch ----
+  local branch="${prefix}/$(echo "$ticket" | tr '[:upper:]' '[:lower:]')-${kebab}"
+
+  echo "$branch"
+
+  # ---- smart git switch ----
+  if $do_checkout; then
+    if git show-ref --verify --quiet "refs/heads/$branch"; then
+      git switch "$branch"
+    else
+      git switch -c "$branch"
+    fi
+  fi
+}
+
+
+
+
+
+function pt() {
+  if [ -f yarn.lock ]; then
+    echo "🔧 Detected yarn.lock → running: yarn test"
+    yarn test
+
+  elif [ -f package-lock.json ]; then
+    echo "🔧 Detected package-lock.json → running: npm run test"
+    npm run test
+  elif [ -f pnpm-lock.yaml ]; then
+    echo "🔧 Detected pnpm-lock.yaml → running: pnpm run test"
+    pnpm run test
+  else
+    echo "⚠️ No lockfile found → defaulting to: pnpm run test"
+    pnpm run test
+  fi
+}
 
 function pd() {
-  if [ -f yarn.lock ]; then
+  if [ -f bun.lockb ]; then
+    echo "🔧 Detected bun.lockb → running: bun dev"
+    bun dev
+  elif [ -f yarn.lock ]; then
     echo "🔧 Detected yarn.lock → running: yarn dev"
     yarn dev
   elif [ -f package-lock.json ]; then
@@ -142,23 +458,6 @@ function pd() {
   else
     echo "⚠️ No lockfile found → defaulting to: pnpm run dev"
     pnpm run dev
-  fi
-}
-
-
-function pt() {
-  if [ -f yarn.lock ]; then
-    echo "🔧 Detected yarn.lock → running: yarn test"
-    yarn test
-  elif [ -f package-lock.json ]; then
-    echo "🔧 Detected package-lock.json → running: npm run test"
-    npm run test
-  elif [ -f pnpm-lock.yaml ]; then
-    echo "🔧 Detected pnpm-lock.yaml → running: pnpm run test"
-    pnpm run test
-  else
-    echo "⚠️ No lockfile found → defaulting to: pnpm run test"
-    pnpm run test
   fi
 }
 
@@ -274,15 +573,23 @@ biome_pr() {
   echo "$changed_files" | xargs npx biome check
 }
 
-
-
-
 cpr() {
   local title="$1"
-  local target_branch=$(git config --get heiway.targetBranch)
+  local target_branch
+  target_branch=$(git config --get heiway.targetBranch)
 
   if [[ -z "$target_branch" ]]; then
     echo "❌ No target branch configured. Use: git config heiway.targetBranch <branch>"
+    return 1
+  fi
+
+  # Read stdin if no argument provided
+  if [[ -z "$title" ]]; then
+    read -r title
+  fi
+
+  if [[ -z "$title" ]]; then
+    echo "❌ PR title is empty"
     return 1
   fi
 
@@ -293,6 +600,7 @@ cpr() {
     --delete-source-branch true \
     --open
 }
+
 
 
 prl() {
@@ -331,9 +639,40 @@ pr() {
   fi
 }
 
-prc(){
-az repos pr checkout --id $1
+prc() {
+  local pr_id="$1"
+
+  # ---- If no argument → try reading from clipboard ----
+  if [[ -z "$pr_id" ]]; then
+    if command -v pbpaste &>/dev/null; then
+      pr_id="$(pbpaste)"
+    elif command -v xclip &>/dev/null; then
+      pr_id="$(xclip -o -selection clipboard)"
+    elif command -v xsel &>/dev/null; then
+      pr_id="$(xsel --clipboard --output)"
+    else
+      echo "❌ No PR ID and cannot read clipboard"
+      return 1
+    fi
+  fi
+
+  # ---- Extract PR ID if clipboard contains full URL ----
+  # Example supported forms:
+  #   https://dev.azure.com/.../pullrequest/1234
+  #   PR 1234
+  #   #1234
+  #   1234
+  pr_id="$(echo "$pr_id" | grep -Eo '[0-9]+' | head -n 1)"
+
+  if [[ -z "$pr_id" ]]; then
+    echo "❌ Could not determine PR ID"
+    return 1
+  fi
+
+  echo "🔄 Checking out PR #$pr_id ..."
+  az repos pr checkout --id "$pr_id"
 }
+
 
 bul(){
 az pipelines build list --top 10
@@ -372,6 +711,8 @@ bu() {
   az pipelines build show --id "$build_id" --open
 }
 
+
+
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
@@ -383,10 +724,6 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 source /Users/nguytb15/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/nguytb15/.lmstudio/bin"
-
 # pnpm
 export PNPM_HOME="/Users/nguytb15/Library/pnpm"
 case ":$PATH:" in
@@ -394,3 +731,7 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
+eval "$(zoxide init zsh)"
+
+
+
