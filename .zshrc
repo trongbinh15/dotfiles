@@ -129,8 +129,31 @@ alias yta='yt-dlp -x --audio-format mp3 -o "./%(title)s.%(ext)s"'
 alias jsw='acli jira workitem search --jql "assignee = currentUser() AND sprint in openSprints() AND status != Done"'
 
 tor() {
-  local link="$(pbpaste)"
-  transmission-cli -w ~/Downloads "$link"
+  local link flags=()
+  
+  # Parse arguments - collect flags, last non-flag is the link
+  while [[ "$1" != "" ]]; do
+    if [[ "$1" =~ ^- ]]; then
+      flags+=("$1")
+      # Check if this flag takes a parameter
+      case "$1" in
+        -d|--downlimit|-u|--uplimit|-p|--port|-t|--tos|-f|--finish|-g|--config-dir)
+          shift
+          flags+=("$1")
+          ;;
+      esac
+    else
+      link="$1"
+    fi
+    shift
+  done
+  
+  # Get link from clipboard if not provided
+  if [[ -z "$link" ]]; then
+    link="$(pbpaste)"
+  fi
+  
+  transmission-cli "${flags[@]}" -w ~/Downloads "$link"
 }
 
 ji() {
@@ -323,8 +346,21 @@ mkb() {
   local ticket=""
   local do_checkout=false
 
-  # ---- if no arg → attempt to read from clipboard ----
-  if [[ $# -lt 1 ]]; then
+  # ---- parse args first to detect flags ----
+  while [[ "$1" != "" ]]; do
+    case "$1" in
+      -c|--checkout)
+        do_checkout=true
+        ;;
+      *)
+        ticket="$1"
+        ;;
+    esac
+    shift
+  done
+
+  # ---- if no ticket yet → attempt to read from clipboard ----
+  if [[ -z "$ticket" ]]; then
     if command -v pbpaste &>/dev/null; then
       ticket="$(pbpaste)"
     elif command -v xclip &>/dev/null; then
@@ -337,19 +373,6 @@ mkb() {
       return 1
     fi
   fi
-
-  # ---- parse args ----
-  while [[ "$1" != "" ]]; do
-    case "$1" in
-      -c|--checkout)
-        do_checkout=true
-        ;;
-      *)
-        ticket="$1"
-        ;;
-    esac
-    shift
-  done
 
   if [[ -z "$ticket" ]]; then
     echo "❌ Ticket ID missing"
@@ -426,7 +449,10 @@ mkb() {
 
 
 function pt() {
-  if [ -f yarn.lock ]; then
+  if [ -f bun.lock ]; then
+    echo "🔧 Detected bun.lock → running: bun test"
+    bun test
+  elif [ -f yarn.lock ]; then
     echo "🔧 Detected yarn.lock → running: yarn test"
     yarn test
 
@@ -443,8 +469,8 @@ function pt() {
 }
 
 function pd() {
-  if [ -f bun.lockb ]; then
-    echo "🔧 Detected bun.lockb → running: bun dev"
+  if [ -f bun.lock ]; then
+    echo "🔧 Detected bun.lock → running: bun dev"
     bun dev
   elif [ -f yarn.lock ]; then
     echo "🔧 Detected yarn.lock → running: yarn dev"
@@ -462,7 +488,10 @@ function pd() {
 }
 
 function pi() {
-  if [ -f yarn.lock ]; then
+  if [ -f bun.lock ]; then
+    echo "📦 Detected bun.lock → running: bun install"
+    bun install
+  elif [ -f yarn.lock ]; then
     echo "📦 Detected yarn.lock → running: yarn install"
     yarn install
   elif [ -f package-lock.json ]; then
@@ -478,7 +507,10 @@ function pi() {
 }
 
 function pb() {
-  if [ -f yarn.lock ]; then
+  if [ -f bun.lock ]; then
+    echo "🏗️ Detected bun.lock → running: bun run build"
+    bun run build
+  elif [ -f yarn.lock ]; then
     echo "🏗️ Detected yarn.lock → running: yarn build"
     yarn build
   elif [ -f package-lock.json ]; then
