@@ -1,0 +1,77 @@
+[metadata]
+name = "acli-jira-board"
+description = "Active sprint board — all members, fuzzy search by name"
+requirements = ["acli", "jq"]
+
+[source]
+command = [
+  "acli jira workitem search --jql \"project = HYDRA AND sprint in openSprints() AND status = 'In Progress' AND assignee = currentUser()\" --json 2>/dev/null | jq -r '.[] | [.key, (.fields.assignee.displayName // \"Unassigned\"), .fields.issuetype.name, .fields.status.name, .fields.summary] | @tsv'",
+  "acli jira workitem search --jql \"project = HYDRA AND sprint in openSprints() AND status != Done\" --json 2>/dev/null | jq -r '.[] | [.key, (.fields.assignee.displayName // \"Unassigned\"), .fields.issuetype.name, .fields.status.name, .fields.summary] | @tsv'"
+]
+
+[preview]
+command = "acli jira workitem view '{split:\\t:0}' --fields 'summary,status,issuetype,priority,assignee,description' 2>/dev/null"
+
+[ui]
+preview_panel = { size = 55 }
+
+[keybindings]
+ctrl-o = "actions:open"
+ctrl-t = "actions:transition"
+ctrl-b = "actions:branch"
+
+[actions.open]
+description = "Open ticket in browser"
+command = "acli jira workitem view '{split:\\t:0}' --web 2>/dev/null"
+mode = "fork"
+
+[actions.branch]
+description = "Create & checkout branch from ticket"
+command = """bash -c '
+  key="{split:\\t:0}"
+  acli_output=$(acli jira workitem view "$key" --fields "summary,issuetype" 2>/dev/null)
+  issue_type=$(echo "$acli_output" | grep -i "^Type:" | sed "s/Type:[[:space:]]*//" )
+  summary=$(echo "$acli_output" | grep -i "^Summary:" | sed "s/Summary:[[:space:]]*//" )
+
+  case "$(echo "$issue_type" | tr "[:upper:]" "[:lower:]")" in
+    "bug"|"defect"|"error"|"hotfix"|"story defect") prefix="bugfix" ;;
+    *) prefix="feat" ;;
+  esac
+
+  kebab=$(echo "$summary" \
+    | iconv -f UTF-8 -t ASCII//TRANSLIT \
+    | tr "[:upper:]" "[:lower:]" \
+    | sed "s/\\[[^]]*\\]//g" \
+    | sed "s/[^a-z0-9]/-/g" \
+    | sed "s/-\\+/-/g" \
+    | sed "s/^-//" \
+    | sed "s/-$//")
+
+  if [[ ${#kebab} -gt 40 ]]; then
+    truncated=${kebab:0:40}
+    kebab=${truncated%-*}
+  fi
+
+  branch="$prefix/$(echo "$key" | tr "[:upper:]" "[:lower:]")-$kebab"
+  echo "Branch: $branch"
+
+  if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git switch "$branch"
+  else
+    git switch -c "$branch"
+  fi
+'"""
+mode = "execute"
+
+[actions.transition]
+description = "Transition ticket status"
+command = """bash -c '
+  key="{split:\\t:0}"
+  issuetype="{split:\\t:2}"
+  status=$(acli jira workitem search --jql "project = HYDRA AND sprint in openSprints() AND issuetype = \\"$issuetype\\"" --json 2>/dev/null \
+    | jq -r ".[].fields.status.name" | sort -u | grep -v "^Done$" \
+    | fzf --prompt "New status ($issuetype) > " --height 40% --reverse)
+  if [[ -z "$status" ]]; then exit 0; fi
+  acli jira workitem transition --key "$key" --status "$status"
+'"""
+mode = "execute"

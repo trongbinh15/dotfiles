@@ -244,8 +244,9 @@ fallback_channel = "files"
 "git-log" = ["git log", "git show"]
 "docker-images" = ["docker run"]
 "git-repos" = ["nvim", "code", "hx", "git clone"]
-"az-devops-pr" = ["az repos pr", "prc", "pr"]
-"az-devops-build" = ["az pipelines build", "bu"]
+"az-devops-pr" = ["az repos pr"]
+"az-devops-build" = ["az pipelines build"]
+"acli-jira-board" = ["acli jira workitem"]
 
 
 [shell_integration.keybindings]

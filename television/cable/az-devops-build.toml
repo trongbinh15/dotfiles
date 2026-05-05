@@ -7,12 +7,15 @@ requirements = ["az"]
 command = "az pipelines build list --top 30 --query \"[].{id:id, number:buildNumber, status:status, result:result, defName:definition.name, branch:sourceBranch}\" -o tsv 2>/dev/null"
 
 [preview]
-command = "az pipelines build show --id {split:\t:0} -o table 2>/dev/null"
+command = "az pipelines build show --id '{split:\\t:0}' -o table 2>/dev/null"
 
 [ui]
 preview_panel = { size = 60 }
 
+[keybindings]
+ctrl-o = "actions:open"
+
 [actions.open]
 description = "Open build in browser"
-command = "az pipelines build show --id {split:\t:0} --open 2>/dev/null"
+command = "az pipelines build show --id '{split:\\t:0}' --open 2>/dev/null"
 mode = "fork"
