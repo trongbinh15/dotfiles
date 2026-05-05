@@ -1,16 +1,27 @@
 return {
   "neovim/nvim-lspconfig",
-  otps = {
+  opts = {
     servers = {
-      -- eslint = {
-      --   settings = {
-      --     -- helps eslint find the eslintrc when it's placed in a subfolder instead of the cwd root
-      --     workingDirectories = { mode = "auto" },
-      --   },
-      -- },
+      -- Disable vtsls organize imports — biome handles it via conform
+      vtsls = {
+        settings = {
+          typescript = {
+            preferences = { organizeImports = false },
+          },
+          javascript = {
+            preferences = { organizeImports = false },
+          },
+        },
+      },
+      -- Disable biome LSP code actions to avoid biome 2.x rule name conflicts
+      -- (formatting/organizing is handled by conform CLI instead)
+      biome = {
+        on_attach = function(client, _)
+          client.server_capabilities.codeActionProvider = false
+        end,
+      },
       tailwindcss = {
         settings = {
-
           lint = {
             cssConflict = "ignore",
           },
@@ -20,12 +31,8 @@ return {
             },
           },
         },
-        -- exclude a filetype from the default_config
         filetypes_exclude = { "markdown" },
-        -- add additional filetypes to the default_config
         filetypes_include = {},
-        -- to fully override the default_config, change the below
-        -- filetypes = {}
       },
     },
   },
