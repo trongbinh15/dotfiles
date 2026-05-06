@@ -5,7 +5,7 @@ requirements = ["acli", "jq"]
 
 [source]
 command = [
-  "acli jira workitem search --jql \"project = HYDRA AND sprint in openSprints() AND status = 'In Progress' AND assignee = currentUser()\" --json 2>/dev/null | jq -r '.[] | [.key, (.fields.assignee.displayName // \"Unassigned\"), .fields.issuetype.name, .fields.status.name, .fields.summary] | @tsv'",
+  "acli jira workitem search --jql \"project = HYDRA AND sprint in openSprints() AND status in ('In Progress', 'To Do') AND assignee = currentUser()\" --json 2>/dev/null | jq -r '.[] | [.key, (.fields.assignee.displayName // \"Unassigned\"), .fields.issuetype.name, .fields.status.name, .fields.summary] | @tsv'",
   "acli jira workitem search --jql \"project = HYDRA AND sprint in openSprints() AND status != Done\" --json 2>/dev/null | jq -r '.[] | [.key, (.fields.assignee.displayName // \"Unassigned\"), .fields.issuetype.name, .fields.status.name, .fields.summary] | @tsv'"
 ]
 
@@ -19,6 +19,35 @@ preview_panel = { size = 55 }
 ctrl-o = "actions:open"
 ctrl-t = "actions:transition"
 ctrl-b = "actions:branch"
+ctrl-y = "actions:copy"
+ctrl-l = "actions:copylink"
+ctrl-g = "actions:comment"
+
+[actions.copylink]
+description = "Copy ticket link to clipboard"
+command = "bash -c 'echo \"https://heineken.atlassian.net/browse/{split:\\t:0}\" | pbcopy'"
+mode = "fork"
+
+[actions.copy]
+description = "Copy ticket content to clipboard"
+command = "bash -c 'acli jira workitem view \"{split:\\t:0}\" --fields \"*all\" 2>/dev/null | pbcopy'"
+mode = "fork"
+
+[actions.comment]
+description = "Add PR link as comment to ticket"
+command = """bash -c '
+  key="{split:\\t:0}"
+  user_id=$(az account show --query "user.name" -o tsv 2>/dev/null)
+  pr=$(az repos pr list --creator "$user_id" --output json 2>/dev/null \
+    | jq -r '"'"'.[] | [(.pullRequestId | tostring), .title] | @tsv'"'"' \
+    | fzf --prompt "Pick PR > " --height 40% --reverse)
+  if [[ -z "$pr" ]]; then exit 0; fi
+  pr_id=$(echo "$pr" | cut -f1)
+  web=$(az repos pr show --id "$pr_id" --query "repository.webUrl" -o tsv 2>/dev/null)
+  pr_url="$web/pullrequest/$pr_id"
+  acli jira workitem comment create --key "$key" -b "PR: $pr_url"
+'"""
+mode = "execute"
 
 [actions.open]
 description = "Open ticket in browser"
@@ -74,4 +103,4 @@ command = """bash -c '
   if [[ -z "$status" ]]; then exit 0; fi
   acli jira workitem transition --key "$key" --status "$status"
 '"""
-mode = "execute"
+mode = "fork"
