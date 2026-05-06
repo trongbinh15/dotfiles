@@ -2,3 +2,4 @@ nvim/plugged
 tmux*.log
 nvim/lazy-lock.json
 nvim/spell
+.serena
