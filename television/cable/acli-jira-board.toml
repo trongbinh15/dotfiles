@@ -19,7 +19,7 @@ preview_panel = { size = 55 }
 
 [keybindings]
 ctrl-o = "actions:open"
-ctrl-t = "actions:transition"
+ctrl-w = "actions:transition"
 ctrl-b = "actions:branch"
 ctrl-y = "actions:copy"
 ctrl-l = "actions:copylink"

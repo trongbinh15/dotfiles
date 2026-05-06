@@ -1,6 +1,6 @@
 [metadata]
 name = "az-devops-pr"
-description = "Azure DevOps pull requests — preview details, open in browser"
+description = "Azure DevOps pull requests — preview, open, checkout, view builds (ctrl-v)"
 requirements = ["az"]
 
 [source]
@@ -18,6 +18,7 @@ ctrl-n = "actions:create"
 ctrl-b = "actions:checkout"
 ctrl-y = "actions:copy"
 ctrl-u = "actions:copylink"
+ctrl-v = "actions:viewbuilds"
 
 [actions.copy]
 description = "Copy PR ID to clipboard"
@@ -41,9 +42,9 @@ mode = "fork"
 
 [actions.create]
 description = "Create new PR"
-command = """bash -c '
+command = """zsh -c '
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-  key=$(echo "$branch" | grep -oiE '"'"'hydra-[0-9]+'"'"' | head -1 | tr '"'"'[:lower:]'"'"' '"'"'[:upper:]'"'"')
+  key=$(echo "$branch" | grep -oiE "hydra-[0-9]+" | head -1 | tr "[:lower:]" "[:upper:]")
 
   if [[ -n "$key" ]]; then
     acli_output=$(acli jira workitem view "$key" --fields "summary" 2>/dev/null)
@@ -51,13 +52,14 @@ command = """bash -c '
     title="$key: $summary"
     desc="https://heineken.atlassian.net/browse/$key"
   else
-    title=""
+    # No HYDRA key found - provide prefix for user to complete
+    title="HYDRA-"
     desc=""
   fi
 
-  printf "Title [%s]: " "$title"
-  read -r input
-  [[ -n "$input" ]] && title="$input"
+  # Use zsh vared for editable input (macOS compatible)
+  vared -p "PR Title: " title
+  vared -p "PR Description: " desc
 
   target=$(git branch -r 2>/dev/null | sed "s|origin/||" | sed "s/^[[:space:]]*//" | sort -u | fzf --prompt "Target branch > " --height 40% --reverse)
   if [[ -z "$target" ]]; then exit 0; fi
@@ -65,3 +67,8 @@ command = """bash -c '
   az repos pr create --title "$title" --description "$desc" --target-branch "$target" --squash true --delete-source-branch true --open
 '"""
 mode = "execute"
+
+[actions.viewbuilds]
+description = "View builds for this PR"
+command = "az pipelines build list --branch refs/pull/{split:\\t:0}/merge -o table | less"
+mode = "fork"
