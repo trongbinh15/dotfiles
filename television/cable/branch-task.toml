@@ -1,0 +1,144 @@
+[metadata]
+name = "branch-task"
+description = "Current branch: linked Jira ticket + Azure PR in one view"
+requirements = ["acli", "jq", "az"]
+
+[source]
+ansi = true
+command = """bash -c '
+  branch=$(git branch --show-current 2>/dev/null)
+  key=$(echo "$branch" | grep -oiE "[a-zA-Z]+-[0-9]+" | head -1 | tr "[:lower:]" "[:upper:]")
+  if [[ -z "$key" ]]; then
+    echo "—\tno ticket\t(branch: $branch)"
+    exit 0
+  fi
+  acli jira workitem search --jql "key = $key" --json 2>/dev/null \
+    | jq -L "$HOME/dotfiles/television" -r '"'"'include "jira-icons"; .[] | [.key, (.fields.status.name | status_colored), ((.fields.issuetype.name | type_icon) + " " + .fields.summary)] | join("\t")'"'"'
+'"""
+
+[preview]
+command = """bash -c '
+  id="{split:\\t:0}"
+  if echo "$id" | grep -qE "^[A-Z]+-[0-9]+$"; then
+    acli jira workitem view "$id" --fields "summary,status,issuetype,priority,assignee,description" 2>/dev/null
+  else
+    az repos pr show --id "$id" -o table 2>/dev/null
+  fi
+'"""
+
+[ui]
+preview_panel = { size = 55 }
+
+[keybindings]
+ctrl-o = "actions:open"
+ctrl-v = "actions:openpr"
+ctrl-n = "actions:createpr"
+ctrl-l = "actions:copylink"
+ctrl-w = "actions:transition"
+ctrl-g = "actions:comment"
+
+[actions.open]
+description = "Open in browser"
+command = """bash -c '
+  id="{split:\\t:0}"
+  if echo "$id" | grep -qE "^[A-Z]+-[0-9]+$"; then
+    acli jira workitem view "$id" --web 2>/dev/null
+  else
+    az repos pr show --id "$id" --open 2>/dev/null
+  fi
+'"""
+mode = "fork"
+
+[actions.openpr]
+description = "Open corresponding PR in browser"
+command = """bash -c '
+  branch=$(git branch --show-current 2>/dev/null)
+  pr=$(az repos pr list --source-branch "$branch" --status all --output json 2>/dev/null \
+    | jq -r '"'"'.[0] | [(.pullRequestId | tostring), .status] | join("\t")'"'"')
+  pr_id=$(echo "$pr" | cut -f1)
+  pr_status=$(echo "$pr" | cut -f2)
+  if [[ -z "$pr_id" || "$pr_id" == "null" ]]; then
+    echo "No PR found for branch: $branch"
+    read -r
+    exit 0
+  fi
+  if [[ "$pr_status" == "abandoned" ]]; then
+    echo "PR #$pr_id is abandoned"
+    read -r
+    exit 0
+  fi
+  az repos pr show --id "$pr_id" --open 2>/dev/null
+'"""
+mode = "fork"
+
+[actions.copylink]
+description = "Copy link to clipboard"
+command = """bash -c '
+  id="{split:\\t:0}"
+  if echo "$id" | grep -qE "^[A-Z]+-[0-9]+$"; then
+    echo "https://heineken.atlassian.net/browse/$id" | pbcopy
+  else
+    web=$(az repos pr show --id "$id" --query "repository.webUrl" -o tsv 2>/dev/null)
+    echo "$web/pullrequest/$id" | pbcopy
+  fi
+'"""
+mode = "fork"
+
+[actions.transition]
+description = "Transition Jira ticket status"
+command = """bash -c '
+  id="{split:\\t:0}"
+  if echo "$id" | grep -qE "^[A-Z]+-[0-9]+$"; then
+    status=$(acli jira workitem search --jql "project = HYDRA AND sprint in openSprints()" --json 2>/dev/null \
+      | jq -r ".[].fields.status.name" | sort -u | grep -v "^Done$" \
+      | fzf --prompt "New status > " --height 40% --reverse)
+    if [[ -z "$status" ]]; then exit 0; fi
+    acli jira workitem transition --key "$id" --status "$status"
+  fi
+'"""
+mode = "fork"
+
+[actions.createpr]
+description = "Create PR for current branch"
+command = """zsh -c '
+  branch=$(git branch --show-current 2>/dev/null)
+  key=$(echo "$branch" | grep -oiE "[a-zA-Z]+-[0-9]+" | head -1 | tr "[:lower:]" "[:upper:]")
+
+  if [[ -n "$key" ]]; then
+    summary=$(acli jira workitem view "$key" --fields "summary" 2>/dev/null \
+      | grep -i "^Summary:" | sed "s/Summary:[[:space:]]*//" )
+    title="$key: $summary"
+    desc="https://heineken.atlassian.net/browse/$key"
+  else
+    title=""
+    desc=""
+  fi
+
+  vared -p "PR Title: " title
+  vared -p "PR Description: " desc
+
+  target=$(git branch -r 2>/dev/null | sed "s|origin/||" | sed "s/^[[:space:]]*//" | sort -u \
+    | fzf --prompt "Target branch > " --height 40% --reverse)
+  if [[ -z "$target" ]]; then exit 0; fi
+
+  az repos pr create --title "$title" --description "$desc" --target-branch "$target" \
+    --squash true --delete-source-branch true --open
+'"""
+mode = "execute"
+
+[actions.comment]
+description = "Add PR link as comment to Jira ticket"
+command = """bash -c '
+  id="{split:\\t:0}"
+  if ! echo "$id" | grep -qE "^[A-Z]+-[0-9]+$"; then exit 0; fi
+  user_id=$(az account show --query "user.name" -o tsv 2>/dev/null)
+  pr=$(az repos pr list --creator "$user_id" --output json 2>/dev/null \
+    | jq -r '"'"'.[] | [(.pullRequestId | tostring), .title] | join("\t")'"'"' \
+    | fzf --prompt "Pick PR > " --height 40% --reverse)
+  if [[ -z "$pr" ]]; then exit 0; fi
+  pr_id=$(echo "$pr" | cut -f1)
+  web=$(az repos pr show --id "$pr_id" --query "repository.webUrl" -o tsv 2>/dev/null)
+  pr_url="$web/pullrequest/$pr_id"
+  acli jira workitem comment create --key "$id" -b "PR: $pr_url"
+'"""
+mode = "execute"
