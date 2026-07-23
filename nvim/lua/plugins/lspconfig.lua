@@ -13,13 +13,6 @@ return {
           },
         },
       },
-      -- Disable biome LSP code actions to avoid biome 2.x rule name conflicts
-      -- (formatting/organizing is handled by conform CLI instead)
-      biome = {
-        on_attach = function(client, _)
-          client.server_capabilities.codeActionProvider = false
-        end,
-      },
       tailwindcss = {
         settings = {
           lint = {

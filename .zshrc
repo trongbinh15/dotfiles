@@ -659,15 +659,24 @@ pr() {
       return 1
     fi
 
-    local pr_id
-    pr_id=$(az repos pr list --source-branch "$branch" --query "[0].pullRequestId" -o tsv)
+    local pr_info pr_id pr_status
+    pr_info=$(az repos pr list --source-branch "$branch" --status all \
+      --query "[0].{id:pullRequestId,status:status}" -o json 2>/dev/null)
+
+    pr_id=$(echo "$pr_info" | grep -o '"id": *[0-9]*' | grep -o '[0-9]*')
+    pr_status=$(echo "$pr_info" | grep -o '"status": *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"')
 
     if [ -z "$pr_id" ]; then
       echo "❌ No PR found for branch '$branch'."
       return 1
     fi
 
-    az repos pr show --id "$pr_id" --open
+    if [ "$pr_status" = "completed" ]; then
+      echo "✅ PR #$pr_id already completed."
+      az repos pr show --id "$pr_id" --open
+    else
+      az repos pr show --id "$pr_id" --open
+    fi
   fi
 }
 
@@ -768,3 +777,8 @@ eval "$(zoxide init zsh)"
 
 
 
+
+# SonarQube MCP
+export SONARQUBE_URL="https://sonarqube.heineken.com"
+export SONARQUBE_TOKEN="squ_55813e148c604cc2ac6cb094dccdfba094965e9d"
+export SONARQUBE_PROJECT_KEY="HYDRASOZXK"
