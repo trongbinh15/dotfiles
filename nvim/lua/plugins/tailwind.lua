@@ -9,6 +9,14 @@ return {
           tailwindCSS = {
             classFunctions = { "tv", "cva" },
           },
+          lint = {
+            cssConflict = "ignore",
+          },
+          experimental = {
+            classRegex = {
+              "tv\\(([^)]*)\\)",
+            },
+          },
         },
       },
     },

@@ -13,20 +13,6 @@ return {
           },
         },
       },
-      tailwindcss = {
-        settings = {
-          lint = {
-            cssConflict = "ignore",
-          },
-          experimental = {
-            classRegex = {
-              "tv\\(([^)]*)\\)",
-            },
-          },
-        },
-        filetypes_exclude = { "markdown" },
-        filetypes_include = {},
-      },
     },
   },
 }
