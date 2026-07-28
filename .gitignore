@@ -1,5 +1,6 @@
 nvim/plugged
-tmux*.log
 nvim/lazy-lock.json
 nvim/spell
 .serena
+herdr/plugins/
+herdr-*.log

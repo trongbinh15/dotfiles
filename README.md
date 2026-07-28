@@ -1,12 +1,12 @@
 # 🚀 Personal Dotfiles
 
-A collection of configuration files for a modern development environment featuring Tmux, Neovim (LazyVim), and custom shell utilities.
+A collection of configuration files for a modern development environment featuring Herdr, Neovim (LazyVim), and custom shell utilities.
 
 ## 📁 Structure
 
 ```
 ├── nvim/                   # Neovim configuration (LazyVim-based)
-├── tmux/                   # Tmux configuration and utilities
+├── herdr/                  # Herdr configuration, plugins, and project layouts
 ├── .zshrc                  # Zsh shell configuration
 └── README.md              # This file
 ```
@@ -23,16 +23,25 @@ A collection of configuration files for a modern development environment featuri
   - Custom keybindings and productivity plugins
   - Spell checking and autocomplete
 
-### Tmux Configuration
-- **Theme**: Catppuccin with custom status line
+### Herdr Configuration
+- **Theme**: Catppuccin
 - **Key Features**:
   - Custom prefix key (`Ctrl-g`)
-  - Mouse support enabled
-  - Vi-style key bindings
-  - Integrated vim-tmux navigation
-  - Lazygit popup integration
-  - Clipboard integration (macOS)
-  - Plugin management with TPM
+  - Lazygit popup (`prefix + alt + g` — plain `prefix+g` is herdr's built-in `goto`/session navigator, kept as-is)
+  - Mouse-native, agent-aware panes/tabs/workspaces
+  - Seamless `Ctrl-h/j/k/l` nav between Neovim splits and herdr panes via the [vim-herdr-navigation](https://github.com/paulbkim-dev/vim-herdr-navigation) plugin (vendored at `herdr/plugins/vim-herdr-navigation`, gitignored — clone step below)
+    - Requires `jq` (`brew install jq`) for Vim-detection; without it the keys still move herdr panes, just with no Vim awareness.
+    - Tradeoff: shadows shell readline `Ctrl-L` (clear screen) / `Ctrl-K` (kill-line) in non-Vim panes.
+- **Known gaps vs old tmux setup** (not yet ported, no confirmed herdr equivalent):
+  - tmux-fingers quick-jump (`i`)
+  - status bar position/format (herdr uses a sidebar instead)
+
+### Project Layouts
+Herdr has no built-in project-file format, so layouts are declared in YAML and applied via the [herdr-spreader](https://github.com/yuk1ty/herdr-spreader) plugin (`herdr plugin install yuk1ty/herdr-spreader`).
+- **Layouts**: `herdr/spreader/*.yaml` — one file per project (`cine`, `hydra-workplaces`, `omni-workplaces`)
+- **Launch**: `mux <project>` shell function (defined in `.zshrc`) — resolves the plugin's built binary and runs `herdr-spreader apply --file herdr/spreader/<project>.yaml`
+- Schema: `workspaces` → `tabs` → `panes`, with `split`/`ratio`/`cwd`/`command`/`wait_for` per pane — see the plugin README for the full reference
+- Note: herdr's `pane split --ratio` sizes the *original* pane, not the new one — set `ratio` to what you want the first/main pane to keep
 
 ### Shell Configuration (Zsh)
 - **Framework**: Oh My Zsh
@@ -50,7 +59,7 @@ A collection of configuration files for a modern development environment featuri
 - [Homebrew](https://brew.sh/)
 - [Node.js](https://nodejs.org/) (managed via fnm)
 - [Neovim](https://neovim.io/) (>= 0.9.0)
-- [Tmux](https://github.com/tmux/tmux)
+- [Herdr](https://herdr.dev/)
 
 ### Quick Setup
 
@@ -63,7 +72,7 @@ A collection of configuration files for a modern development environment featuri
 2. **Install dependencies**:
    ```bash
    # Install Homebrew packages
-   brew install neovim tmux starship fnm
+   brew install neovim starship fnm
    
    # Install Oh My Zsh
    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -78,22 +87,26 @@ A collection of configuration files for a modern development environment featuri
    # Neovim
    ln -sf ~/.config/dotfiles/nvim ~/.config/nvim
    
-   # Tmux
-   mkdir -p ~/.config/tmux
-   ln -sf ~/.config/dotfiles/tmux/* ~/.config/tmux/
-   
    # Zsh
    ln -sf ~/.config/dotfiles/.zshrc ~/.zshrc
    ```
 
-4. **Install Tmux Plugin Manager**:
+4. **Herdr**:
    ```bash
-   git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
-   ```
+   curl -fsSL https://herdr.dev/install.sh | sh
+   mkdir -p ~/.config/herdr
+   ln -sf ~/.config/dotfiles/herdr/config.toml ~/.config/herdr/config.toml
 
-5. **Install tmux plugins**:
-   - Start tmux: `tmux`
-   - Press `prefix + I` (Ctrl-g + I) to install plugins
+   # vim-herdr-navigation plugin (Ctrl-h/j/k/l across nvim splits + herdr panes)
+   git clone https://github.com/paulbkim-dev/vim-herdr-navigation ~/.config/dotfiles/herdr/plugins/vim-herdr-navigation
+   herdr plugin link ~/.config/dotfiles/herdr/plugins/vim-herdr-navigation
+   brew install jq   # optional, enables Vim-aware forwarding
+
+   # herdr-spreader plugin (project layouts, replaces tmuxinator — see herdr/spreader/*.yaml)
+   herdr plugin install yuk1ty/herdr-spreader -y
+
+   herdr
+   ```
 
 ## ⚡ Key Features
 
@@ -109,10 +122,13 @@ A collection of configuration files for a modern development environment featuri
 - `prc <id>` - Checkout a pull request branch
 - `bu [pr_id]` - Open build logs for a PR
 
-### Tmux Shortcuts
-- `prefix + r` - Reload tmux configuration
-- `prefix + g` - Open lazygit in a popup
-- `Ctrl + h/j/k/l` - Navigate between vim and tmux panes seamlessly
+### Herdr Shortcuts
+- `prefix + shift + r` - Reload herdr configuration
+- `prefix + alt + g` - Open lazygit in a popup
+- `Ctrl + h/j/k/l` - Navigate between vim and herdr panes seamlessly
+
+### Project Layouts
+- `mux <project>` - Spin up a project's herdr workspace/tabs/panes from `herdr/spreader/<project>.yaml` (e.g. `mux cine`)
 
 ### Neovim Enhancements
 - `jj` - Exit insert mode
@@ -123,12 +139,11 @@ A collection of configuration files for a modern development environment featuri
 
 ## 🎨 Customization
 
-### Tmux Themes
-The configuration includes both Catppuccin and Dracula themes. To switch themes:
+### Herdr Themes
+The configuration uses the Catppuccin theme. To switch themes:
 
-1. Edit `tmux/tmux.conf`
-2. Comment/uncomment the desired theme plugin
-3. Reload tmux configuration
+1. Edit the `[theme]` section in `herdr/config.toml`
+2. Reload with `prefix + shift + r`, or `herdr server reload-config`
 
 ### Neovim Plugins
 Neovim uses LazyVim's plugin management. To add new plugins:
@@ -144,7 +159,7 @@ Add custom aliases to `.zshrc` in the aliases section or create project-specific
 
 ### Updating Plugins
 - **Neovim**: Run `:Lazy update` in Neovim
-- **Tmux**: Press `prefix + U` to update tmux plugins
+- **Herdr**: `herdr plugin` subcommands (`herdr plugin list`, `herdr update`)
 - **Oh My Zsh**: Run `omz update`
 
 ### Backup
@@ -152,13 +167,13 @@ Before making changes, consider backing up your existing configurations:
 ```bash
 cp ~/.zshrc ~/.zshrc.backup
 cp -r ~/.config/nvim ~/.config/nvim.backup
-cp -r ~/.config/tmux ~/.config/tmux.backup
+cp -r ~/.config/herdr ~/.config/herdr.backup
 ```
 
 ## 📋 Requirements
 
 - **Neovim**: >= 0.9.0
-- **Tmux**: >= 3.0
+- **Herdr**: latest stable
 - **Zsh**: >= 5.0
 - **Node.js**: Latest LTS (managed via fnm)
 - **Git**: >= 2.0

@@ -1,0 +1,46 @@
+# Migrated from ~/.config/tmuxinator/hydra-workplaces.yml
+# Apply with: mux hydra-workplaces   (see .zshrc)
+#
+# Note: herdr's `pane split --ratio` gives that share to the ORIGINAL pane,
+# not the new one (opposite of tmux/tmuxinator's main-pane convention) —
+# ratio: 0.7 keeps nvim at ~70%, the new pane gets the remaining ~30%.
+workspaces:
+  - name: hydra-workplaces
+    root: "~"
+    focus: true
+    tabs:
+      - label: hydra-components
+        cwd: hydra-components
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: hydra-sb
+        cwd: hydra-sb-frontend
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: hydra-ym
+        cwd: hydra-ym-frontend
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: hydra-tm
+        cwd: hydra-tm-frontend
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: hydra-epod
+        cwd: hydra-epod-frontend
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7

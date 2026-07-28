@@ -1,0 +1,39 @@
+# Migrated from ~/.config/tmuxinator/omni-workplaces.yml
+# Apply with: mux omni-workplaces   (see .zshrc)
+#
+# Note: herdr's `pane split --ratio` gives that share to the ORIGINAL pane,
+# not the new one (opposite of tmux/tmuxinator's main-pane convention) —
+# ratio: 0.7 keeps nvim at ~70%, the new pane gets the remaining ~30%.
+workspaces:
+  - name: omni-workplaces
+    root: "~"
+    focus: true
+    tabs:
+      - label: hnk-commerce-storefront
+        cwd: hnk-commerce-storefront
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: hnk-oms-admin
+        cwd: hnk-oms-admin
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: REP
+        cwd: DSRWeb
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+      - label: LOOP
+        cwd: distributor-driver2-frontend
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7

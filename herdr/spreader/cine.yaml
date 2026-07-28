@@ -1,0 +1,25 @@
+# Migrated from ~/.config/tmuxinator/cine.yml
+# Apply with: mux cine   (see .zshrc)
+#
+# Note: herdr's `pane split --ratio` gives that share to the ORIGINAL pane,
+# not the new one (opposite of tmux/tmuxinator's main-pane convention) —
+# ratio: 0.7 keeps nvim at ~70%, the new pane gets the remaining ~30%.
+workspaces:
+  - name: cine
+    root: ~/cine-sync
+    focus: true
+    tabs:
+      - label: editor
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+            command: bun run dev
+      - label: editor2
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.7
+            command: bun run dev

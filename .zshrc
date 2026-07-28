@@ -752,6 +752,34 @@ bu() {
   az pipelines build show --id "$build_id" --open
 }
 
+# herdr-spreader project launcher (replaces `tmuxinator start <name>`).
+# Layouts: ~/dotfiles/herdr/spreader/*.yaml
+_herdr_spreader_bin() {
+  local dir=$(command find "$HOME/.config/herdr/plugins/github" -maxdepth 1 -type d -name 'herdr-spreader-*' 2>/dev/null | head -n 1)
+  [[ -n "$dir" ]] && echo "$dir/target/release/herdr-spreader"
+}
+
+mux() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: mux <project>  (available: $(ls "$HOME/dotfiles/herdr/spreader" | sed 's/\.yaml$//' | tr '\n' ' '))"
+    return 1
+  fi
+
+  local bin=$(_herdr_spreader_bin)
+  if [[ -z "$bin" || ! -x "$bin" ]]; then
+    echo "❌ herdr-spreader plugin not found/built. Run: herdr plugin install yuk1ty/herdr-spreader"
+    return 1
+  fi
+
+  local file="$HOME/dotfiles/herdr/spreader/$1.yaml"
+  if [[ ! -f "$file" ]]; then
+    echo "❌ No layout for '$1' (expected $file)"
+    return 1
+  fi
+
+  "$bin" apply --file "$file"
+}
+
 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.

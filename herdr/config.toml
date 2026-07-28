@@ -1,0 +1,62 @@
+# Herdr config — migrated from tmux/tmux.conf.
+# See ~/dotfiles/README.md "Herdr" section for gaps vs old tmux setup.
+
+onboarding = false
+
+[ui]
+mouse_capture = true # was `set-option -g mouse on` in tmux.conf
+
+[keys]
+prefix = "ctrl+g" # was `set-option -g prefix C-g` in tmux.conf
+# built-ins that already cover old tmux.conf bindings, no override needed:
+#   copy_mode     prefix+[        was `mode-keys vi` (vi-style scrollback/copy)
+#   reload_config prefix+shift+r  was `bind r source-file ...`
+#   focus_pane_*  prefix+h/j/k/l  pane navigation (unchanged from herdr defaults)
+# NOTE: `goto` (session navigator) already owns prefix+g by default, so the
+# lazygit popup below uses prefix+alt+g instead, to avoid clobbering it.
+
+# vim-herdr-navigation plugin (herdr/plugins/vim-herdr-navigation) — direct,
+# no-prefix Ctrl+h/j/k/l that forwards into Vim/Neovim when it's the foreground
+# process, else moves herdr pane focus. Ports old vim-tmux-navigator feel.
+# NOTE: shadows shell readline Ctrl+L (clear) / Ctrl+K (kill-line) in non-Vim panes.
+[[keys.command]]
+key = "ctrl+h"
+type = "plugin_action"
+command = "vim-herdr-navigation.left"
+description = "navigate left (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "plugin_action"
+command = "vim-herdr-navigation.down"
+description = "navigate down (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "plugin_action"
+command = "vim-herdr-navigation.up"
+description = "navigate up (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "plugin_action"
+command = "vim-herdr-navigation.right"
+description = "navigate right (vim/herdr)"
+
+[[keys.command]]
+key = "prefix+alt+g"
+type = "popup"
+command = "lazygit"
+description = "run lazygit" # was `bind -r g display-popup ... lazygit` in tmux/utility.conf
+width = "80%"
+height = "80%"
+
+[theme]
+name = "catppuccin"
+
+[theme.custom]
+accent = "#89b4fa" # matches old pane-active-border-style blue
+blue = "#89b4fa"
+
+[session]
+resume_agents_on_restore = true
