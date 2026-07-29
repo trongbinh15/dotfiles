@@ -51,6 +51,29 @@ description = "run lazygit" # was `bind -r g display-popup ... lazygit` in tmux/
 width = "80%"
 height = "80%"
 
+# herdr-pluck plugin (rmarganti/herdr-pluck) — tmux-fingers equivalent: hint
+# labels over URLs/paths/SHAs/UUIDs/IPs in the focused pane, type hint to copy.
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "rmarganti.herdr-pluck.pluck"
+description = "pluck visible token (tmux-fingers equivalent)"
+
+# Custom token usage row — reported via the official pane.report_metadata
+# socket API.
+# claude: $tok_ctx/$tok_out from ~/.claude/hooks/herdr-token-usage.sh (Stop
+# hook, transcript-derived). $ctx/$sess/$week from
+# ~/.claude/hooks/herdr-usage-report.sh, piggybacked on the statusLine hook —
+# these are Claude Code's own pre-computed context-window and account
+# rate-limit (5h session / 7d weekly) percentages.
+# opencode: $tok_ctx/$tok_out/$ctx from
+# ~/.config/opencode/plugins/herdr-token-usage.js (message.updated event,
+# session-storage-derived). No $sess/$week equivalent — that's a Claude
+# subscription rate limit, not a concept opencode's multi-provider model has.
+[ui.sidebar.agents.rows_by_agent]
+claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"], ["agent", "$tok_out"], ["$ctx", "$sess", "$week"]]
+opencode = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"], ["agent", "$tok_out"], ["$ctx"]]
+
 [theme]
 name = "catppuccin"
 

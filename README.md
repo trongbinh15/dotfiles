@@ -32,8 +32,8 @@ A collection of configuration files for a modern development environment featuri
   - Seamless `Ctrl-h/j/k/l` nav between Neovim splits and herdr panes via the [vim-herdr-navigation](https://github.com/paulbkim-dev/vim-herdr-navigation) plugin (vendored at `herdr/plugins/vim-herdr-navigation`, gitignored — clone step below)
     - Requires `jq` (`brew install jq`) for Vim-detection; without it the keys still move herdr panes, just with no Vim awareness.
     - Tradeoff: shadows shell readline `Ctrl-L` (clear screen) / `Ctrl-K` (kill-line) in non-Vim panes.
+  - tmux-fingers equivalent (`prefix + f`) via the [herdr-pluck](https://github.com/rmarganti/herdr-pluck) plugin (`herdr plugin install rmarganti/herdr-pluck`) — hint labels over URLs/paths/SHAs/UUIDs/IPs in the focused pane, type hint to copy
 - **Known gaps vs old tmux setup** (not yet ported, no confirmed herdr equivalent):
-  - tmux-fingers quick-jump (`i`)
   - status bar position/format (herdr uses a sidebar instead)
 
 ### Project Layouts
@@ -125,6 +125,7 @@ Herdr has no built-in project-file format, so layouts are declared in YAML and a
 ### Herdr Shortcuts
 - `prefix + shift + r` - Reload herdr configuration
 - `prefix + alt + g` - Open lazygit in a popup
+- `prefix + f` - Pluck (tmux-fingers equivalent): hint-copy a URL/path/SHA/UUID/IP from focused pane
 - `Ctrl + h/j/k/l` - Navigate between vim and herdr panes seamlessly
 
 ### Project Layouts
