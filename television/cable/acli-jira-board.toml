@@ -12,7 +12,32 @@ command = [
 ]
 
 [preview]
-command = "acli jira workitem view '{split:\\t:0}' --fields 'summary,status,issuetype,priority,assignee,description' 2>/dev/null"
+command = """bash -c '
+  key="{split:\\t:0}"
+  bold=$(printf "\\033[1m"); reset=$(printf "\\033[0m")
+  c_prog=$(printf "\\033[36m"); c_todo=$(printf "\\033[33m"); c_done=$(printf "\\033[32m")
+  c_review=$(printf "\\033[35m"); c_blocked=$(printf "\\033[31m"); c_cancel=$(printf "\\033[90m")
+  link_open=$(printf "\\033]8;;"); link_term=$(printf "\\a")
+  link_close="${link_open}${link_term}"
+  acli jira workitem view "$key" --fields "summary,status,issuetype,priority,assignee,description" 2>/dev/null | sed -E \
+    -e "s#(https?://[^[:space:])]+)#${link_open}\\1${link_term}\\1${link_close}#g" \
+    -e "s/^Type: Bug$/${bold}Type:${reset} 🐛 Bug/" \
+    -e "s/^Type: Defect$/${bold}Type:${reset} 🐛 Defect/" \
+    -e "s/^Type: Story Defect$/${bold}Type:${reset} 🐛 Story Defect/" \
+    -e "s/^Type: Story$/${bold}Type:${reset} 📖 Story/" \
+    -e "s/^Type: Subtask$/${bold}Type:${reset} 🗒️ Subtask/" \
+    -e "s/^Type: Epic$/${bold}Type:${reset} ⚡ Epic/" \
+    -e "s/^Type: Task$/${bold}Type:${reset} ✔️ Task/" \
+    -e "s/^Type:(.*)$/${bold}Type:${reset}\\1/" \
+    -e "s/^Status: In Progress$/${bold}Status:${reset} ${c_prog}In Progress${reset}/" \
+    -e "s/^Status: To do$/${bold}Status:${reset} ${c_todo}To do${reset}/" \
+    -e "s/^Status: Done$/${bold}Status:${reset} ${c_done}Done${reset}/" \
+    -e "s/^Status: In Review$/${bold}Status:${reset} ${c_review}In Review${reset}/" \
+    -e "s/^Status: Blocked$/${bold}Status:${reset} ${c_blocked}Blocked${reset}/" \
+    -e "s/^Status: Cancelled$/${bold}Status:${reset} ${c_cancel}Cancelled${reset}/" \
+    -e "s/^Status:(.*)$/${bold}Status:${reset}\\1/" \
+    -e "s/^(Key|Summary|Priority|Assignee|Description):/${bold}\\1:${reset}/"
+'"""
 
 [ui]
 preview_panel = { size = 55 }
