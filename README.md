@@ -16,6 +16,8 @@ A macOS-oriented development setup for Zsh, Neovim (LazyVim), Herdr, and Televis
 │   └── lua/
 │       ├── config/                # Options, keymaps, lazy.nvim setup
 │       └── plugins/               # Local plugin specifications
+├── omp/
+│   └── no-dotenv-policy.ts        # Custom Oh My Pi Varlock policy extension
 ├── television/
 │   ├── config.toml                # Television UI, keys, and shell integration
 │   ├── cable/                     # Jira, Azure DevOps, and branch-task channels
@@ -249,6 +251,17 @@ Neovim bootstraps lazy.nvim and imports LazyVim plus the local `nvim/lua/plugins
 
 The local `vim-herdr-navigation` spec loads the ignored plugin checkout after LazyVim's defaults so Ctrl-H/J/K/L can move between Neovim splits and Herdr panes. At a split edge, Neovim calls `herdr pane focus`; outside Herdr it falls back to tmux when available or normal window navigation.
 
+## Oh My Pi policy extension
+
+`omp/no-dotenv-policy.ts` is a custom Oh My Pi extension for Varlock-managed dotenv files. Its `tool_call` hook:
+
+- allows `.env.schema` references but blocks other dotenv-file references
+- blocks the `eval` tool because it can bypass path checks
+- blocks tool calls containing clipboard commands that could expose secrets
+- fails closed when tool input cannot be serialized
+
+This is a tool-call boundary, not an OS sandbox. Use Varlock's `varlock run`/`varlock load` workflow for protected dotenv values. The extension is tracked as source; load it through the local Oh My Pi extension setup.
+
 ## Maintenance
 
 - Neovim: run `:Lazy update`
@@ -267,4 +280,4 @@ cp -r "$HOME/.config/television" "$HOME/.config/television.backup"
 
 ## Scope notes
 
-This repository currently has no root-level `LICENSE` file. `nvim/LICENSE` belongs to the LazyVim starter configuration and is not a license declaration for the whole dotfiles repository. The `.claude/`, `.serena/`, and `omp/` files that may exist in a local checkout are machine or harness metadata, not portable dotfile configuration, and are not included in the setup above.
+This repository currently has no root-level `LICENSE` file. `nvim/LICENSE` belongs to the LazyVim starter configuration and is not a license declaration for the whole dotfiles repository. The `.claude/` and `.serena/` files that may exist in a local checkout are machine metadata and are not included in the setup above. `omp/no-dotenv-policy.ts` is tracked custom Oh My Pi policy source and is part of the repository configuration.
