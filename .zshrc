@@ -125,6 +125,11 @@ alias pra="pnpm run android"
 alias pri="pnpm run ios"
 alias yta='yt-dlp -x --audio-format mp3 -o "./%(title)s.%(ext)s"'
 
+# OMP must receive validated credentials through Varlock, never load dotenv directly.
+omp() {
+	command varlock run --inject vars -- omp "$@"
+}
+
 # Jira sprint workitems
 alias jsw='acli jira workitem search --jql "assignee = currentUser() AND sprint in openSprints() AND status != Done"'
 
@@ -487,7 +492,7 @@ function pd() {
   fi
 }
 
-function pi() {
+function pit() {
   if [ -f bun.lock ]; then
     echo "📦 Detected bun.lock → running: bun install"
     bun install
@@ -805,8 +810,8 @@ eval "$(zoxide init zsh)"
 
 
 
-
-# SonarQube MCP
-export SONARQUBE_URL="https://sonarqube.heineken.com"
-export SONARQUBE_TOKEN="squ_55813e148c604cc2ac6cb094dccdfba094965e9d"
-export SONARQUBE_PROJECT_KEY="HYDRASOZXK"
+export PATH=$PATH:$HOME/.maestro/bin
+export PATH=$PATH:$HOME/.maestro/bin
+export HEADROOM_MODE=token
+export HEADROOM_ROLLOUT_CHANNEL=beta
+export HEADROOM_READ_MATURATION=1
