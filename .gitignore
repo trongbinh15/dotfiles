@@ -4,3 +4,4 @@ nvim/spell
 .serena
 herdr/plugins/
 herdr-*.log
+.DS_Store
