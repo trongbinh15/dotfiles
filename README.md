@@ -255,10 +255,14 @@ The local `vim-herdr-navigation` spec loads the ignored plugin checkout after La
 
 `omp/no-dotenv-policy.ts` is a custom Oh My Pi extension for Varlock-managed dotenv files. Its `tool_call` hook:
 
-- allows `.env.schema` references but blocks other dotenv-file references
+- treats `.env.schema` as the non-secret contract
+- protects reads and writes targeting other dotenv files while allowing path-only glob discovery and dotenv filenames in safe file content such as `.gitignore`
+- leaves gitignore filtering to glob callers; use `hidden: true, gitignore: false` when checking for `.env.schema`
 - blocks the `eval` tool because it can bypass path checks
 - blocks tool calls containing clipboard commands that could expose secrets
 - fails closed when tool input cannot be serialized
+- skips dotenv path blocking when the active working directory has no protected dotenv file
+- invokes Varlock from the shell wrapper when `.env`/`.env.schema` is available; set `VARLOCK_ENV_FILE` for projects with multiple mode-specific files, for example `VARLOCK_ENV_FILE=.env.development omp`
 
 This is a tool-call boundary, not an OS sandbox. Use Varlock's `varlock run`/`varlock load` workflow for protected dotenv values. The extension is tracked as source; load it through the local Oh My Pi extension setup.
 

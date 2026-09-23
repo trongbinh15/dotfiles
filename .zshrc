@@ -125,9 +125,26 @@ alias pra="pnpm run android"
 alias pri="pnpm run ios"
 alias yta='yt-dlp -x --audio-format mp3 -o "./%(title)s.%(ext)s"'
 
-# OMP must receive validated credentials through Varlock, never load dotenv directly.
+# Use Varlock for OMP when the current folder has protected dotenv values.
+# Set VARLOCK_ENV_FILE when a project has multiple mode-specific dotenv files.
 omp() {
-	command varlock run --inject vars -- omp "$@"
+	local dotenv_file="${VARLOCK_ENV_FILE:-}"
+
+	if [[ -n "$dotenv_file" ]]; then
+		if [[ ! -s "$dotenv_file" ]]; then
+			print -u2 "omp: VARLOCK_ENV_FILE '$dotenv_file' is missing or empty"
+			return 1
+		fi
+		command varlock run --inject vars --path "$dotenv_file" -- omp "$@"
+		return
+	fi
+
+	if [[ -s ".env.schema" || -s ".env" ]]; then
+		command varlock run --inject vars -- omp "$@"
+		return
+	fi
+
+	command omp "$@"
 }
 
 # Jira sprint workitems
